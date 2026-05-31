@@ -71,7 +71,6 @@
   }
 
   .board-outer {
-    position: relative;
     display: grid;
     grid-template-columns: 22px repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr) 24px;
@@ -102,14 +101,14 @@
   }
 
   .board {
-    position: absolute;
-    top: 0;
-    left: 22px;
-    right: 0;
-    bottom: 24px;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
+    grid-column: 2 / 10;
+    grid-row: 1 / 9;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .square {
@@ -435,7 +434,6 @@
       grid-template-columns: 18px repeat(8, 1fr);
       grid-template-rows: repeat(8, 1fr) 20px;
     }
-    .board { left: 18px; bottom: 20px; }
     .move-arrow { left: 18px; width: calc(100% - 18px); height: calc(100% - 20px); }
     .square { font-size: min(8.5vw, 9vh, 56px); }
     .board-label { font-size: 10px; }
@@ -462,7 +460,6 @@
       grid-template-columns: 22px repeat(8, 1fr);
       grid-template-rows: repeat(8, 1fr) 22px;
     }
-    .board { left: 22px; bottom: 22px; }
     .board-label { font-size: 10px; }
     .move-arrow {
       left: 22px;
@@ -524,7 +521,6 @@
       grid-template-rows: repeat(8, 1fr) 14px;
     }
     .board-label { font-size: 8px; }
-    .board { left: 14px; bottom: 14px; }
     .move-arrow { left: 14px; width: calc(100% - 14px); height: calc(100% - 14px); }
     .square { font-size: calc((100vw - 28px) / 8); }
 
