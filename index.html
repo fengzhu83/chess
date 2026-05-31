@@ -109,6 +109,7 @@
     min-height: 0;
     min-width: 0;
     overflow: hidden;
+    contain: layout;
   }
 
   .square {
@@ -840,11 +841,21 @@ class AudioSan11 {
   constructor() {
     this._cache = {};   // key → HTMLAudioElement
     this._loaded = false;
+    this._supportsOgg = (() => {
+      const a = new Audio();
+      return a.canPlayType('audio/ogg') !== '' ||
+             a.canPlayType('audio/ogg; codecs=vorbis') !== '';
+    })();
   }
 
   // mapping: { 'k_move': 'tmp_3201.ogg', 'k_capture': 'tmp_2327.ogg', ... }
   // Uses Audio() constructor (not fetch) for local file:// compatibility
   init(mapping) {
+    // Safari/iOS doesn't support OGG — skip loading entirely
+    if (!this._supportsOgg) {
+      this._loaded = true; // pretend loaded so caller gets clean false
+      return Promise.resolve();
+    }
     const base = 'voices/';
     for (const [key, file] of Object.entries(mapping)) {
       const audio = new Audio(base + file);
@@ -952,15 +963,15 @@ const VoiceCaster = {
     const zhOther = zh.filter(v => v.lang !== 'zh-CN');
 
     // Detect gender from voice name (SpeechSynthesisVoice lacks a standard gender field)
-    // Windows: 康/云希/志威(male), 慧/瑶/晓/涵/雅婷(female)
-    // iOS/macOS: Ting-Ting/Mei-Jia/Sin-Ji(female), Tian-Tian(male)
+    // Windows: 康/云希/志威/小明(male), 慧/瑶/晓/涵/雅婷/彤彤/依依(female)
+    // iOS/macOS: Ting-Ting/婷婷/Mei-Jia/Sin-Ji(female), Tian-Tian(male)
     const isMaleName = (name) =>
-      /康|云希|志威|Danny|Kaifu/i.test(name) ||
-      /Yunxi|Zhiwei/i.test(name) ||
+      /康|云希|志威|小明|Danny|Kaifu/i.test(name) ||
+      /Yunxi|Zhiwei|Xiaoming/i.test(name) ||
       /Tian[- ]?Tian/i.test(name);
     const isFemaleName = (name) =>
-      /慧|瑶|晓|涵|雅婷|Tracy|Huihui|Yaoyao|Xiaoxiao|Hanhan|Yating/i.test(name) ||
-      /Ting[- ]?Ting|Mei[- ]?Jia|Sin[- ]?Ji|Yu[- ]?Shu/i.test(name);
+      /慧|瑶|晓|涵|雅婷|彤彤|依依|Tracy|Huihui|Yaoyao|Xiaoxiao|Hanhan|Yating|Tongtong|Yiyi/i.test(name) ||
+      /Ting[- ]?Ting|Tingting|婷婷|Mei[- ]?Jia|Meijia|美佳|Sin[- ]?Ji|Sinji|Yu[- ]?Shu|Yushu/i.test(name);
 
     const males = zh.filter(v => isMaleName(v.name));
     const females = zh.filter(v => isFemaleName(v.name));
@@ -2358,6 +2369,12 @@ class ChessUI {
       this._updateIdentity();
       overlay.remove();
       this._updateStatus();
+      // iOS speech warmup: speak a silent utterance first to unlock speechSynthesis
+      if (typeof speechSynthesis !== 'undefined') {
+        const warm = new SpeechSynthesisUtterance('');
+        warm.volume = 0;
+        speechSynthesis.speak(warm);
+      }
       const cue = VoiceCaster.narratorVoice();
       Narration.announce('对局开始，白方先行。', true, cue, 1.0, 0.85);
     };
