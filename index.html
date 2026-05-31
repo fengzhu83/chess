@@ -967,46 +967,53 @@ const VoiceCaster = {
   },
 
   _castVoices() {
+    // Prefer Mandarin (zh-CN/zh-TW), avoid Cantonese (zh-HK)
+    const isMandarin = (v) => v.lang === 'zh-CN' || v.lang === 'zh-TW';
     const zh = this._allVoices.filter(v => v.lang.startsWith('zh'));
-    const zhCN = zh.filter(v => v.lang === 'zh-CN');
-    const zhOther = zh.filter(v => v.lang !== 'zh-CN');
+    const zhMandarin = zh.filter(v => isMandarin(v));
+    // Only use Cantonese as last resort
+    const usable = zhMandarin.length > 0 ? zhMandarin : zh;
 
     // Detect gender from voice name (SpeechSynthesisVoice lacks a standard gender field)
     // Windows: 康/云希/志威/小明(male), 慧/瑶/晓/涵/雅婷/彤彤/依依(female)
-    // iOS/macOS: Ting-Ting/婷婷/Mei-Jia/Sin-Ji(female), Tian-Tian(male)
+    // iOS/macOS: Ting-Ting/婷婷/Mei-Jia(female), Tian-Tian(male)
     const isMaleName = (name) =>
       /康|云希|志威|小明|Danny|Kaifu/i.test(name) ||
       /Yunxi|Zhiwei|Xiaoming/i.test(name) ||
       /Tian[- ]?Tian/i.test(name);
     const isFemaleName = (name) =>
       /慧|瑶|晓|涵|雅婷|彤彤|依依|Tracy|Huihui|Yaoyao|Xiaoxiao|Hanhan|Yating|Tongtong|Yiyi/i.test(name) ||
-      /Ting[- ]?Ting|Tingting|婷婷|Mei[- ]?Jia|Meijia|美佳|Sin[- ]?Ji|Sinji|Yu[- ]?Shu|Yushu/i.test(name);
+      /Ting[- ]?Ting|Tingting|婷婷|Mei[- ]?Jia|Meijia|美佳/i.test(name);
 
-    const males = zh.filter(v => isMaleName(v.name));
-    const females = zh.filter(v => isFemaleName(v.name));
+    const males = usable.filter(v => isMaleName(v.name));
+    const females = usable.filter(v => isFemaleName(v.name));
     // Voices we couldn't classify — treat as neutral, usable by any role
-    const neutral = zh.filter(v => !isMaleName(v.name) && !isFemaleName(v.name));
+    const neutral = usable.filter(v => !isMaleName(v.name) && !isFemaleName(v.name));
 
-    // Prefer zh-CN voices, fill with other zh variants
+    // Strongly prefer zh-CN voices
     const pick = (gender, exclude = new Set()) => {
-      // Try gender-matched pool first
+      // Try gender-matched pool first: zh-CN only
       let pool = (gender === 'male' ? males : females)
         .filter(v => !exclude.has(v.name));
       let cnPool = pool.filter(v => v.lang === 'zh-CN');
       if (cnPool.length > 0) return cnPool[0];
+      // Try gender-matched non-zh-CN
       if (pool.length > 0) return pool[0];
-      // Fallback: try neutral unclassified voices
-      let nPool = neutral.filter(v => !exclude.has(v.name));
+      // Fallback: neutral zh-CN voices
+      let nPool = neutral.filter(v => !exclude.has(v.name) && v.lang === 'zh-CN');
       if (nPool.length > 0) return nPool[0];
-      // Fallback: any zh voice not yet used
-      let rest = zh.filter(v => !exclude.has(v.name));
+      // Fallback: any neutral
+      nPool = neutral.filter(v => !exclude.has(v.name));
+      if (nPool.length > 0) return nPool[0];
+      // Fallback: any usable voice not yet used
+      let rest = usable.filter(v => !exclude.has(v.name));
       return rest.length > 0 ? rest[0] : null;
     };
 
     const used = new Set();
     const cast = {};
 
-    if (zh.length >= 2 || (zh.length >= 1 && this._allVoices.length >= 3)) {
+    if (usable.length >= 2 || (usable.length >= 1 && this._allVoices.length >= 3)) {
       // We have enough voices — assign distinct per piece
       for (const [type, prof] of Object.entries(this._profiles)) {
         let v = pick(prof.gender, used);
@@ -1020,15 +1027,15 @@ const VoiceCaster = {
       for (const type of Object.keys(this._profiles)) {
         if (!cast[type]) {
           const fb = this._profiles[type].voice;
-          const reuse = assigned[0] || zh[0] || this._allVoices[0];
+          const reuse = assigned[0] || usable[0] || this._allVoices[0];
           cast[type] = { voice: reuse, pitch: fb.pitch, rate: fb.rate };
         }
       }
-    } else if (zh.length === 1) {
-      // Only one Chinese voice — use it for all, vary pitch/rate
+    } else if (usable.length === 1) {
+      // Only one usable Chinese voice — use it for all, vary pitch/rate
       for (const type of Object.keys(this._profiles)) {
         const fb = (this._profiles[type] || {}).voice || { pitch: 1.0, rate: 1.0 };
-        cast[type] = { voice: zh[0], pitch: fb.pitch, rate: fb.rate };
+        cast[type] = { voice: usable[0], pitch: fb.pitch, rate: fb.rate };
       }
     } else {
       // No Chinese voices — use first available voice with pitch variation
@@ -1098,7 +1105,7 @@ const VoiceCaster = {
     return this._audioManager.play(`${type}_${context}`);
   },
 
-  // Get narrator voice (neutral, clear — like 旁白)
+  // Get narrator voice (neutral, clear Mandarin — like 旁白)
   narratorVoice() {
     if (typeof speechSynthesis === 'undefined') return null;
     // Re-check voices in case they loaded after init
@@ -1107,10 +1114,11 @@ const VoiceCaster = {
       this._allVoices = latest;
       this._castVoices();
     }
-    const zh = this._allVoices.filter(v => v.lang.startsWith('zh'));
-    const pref = zh.find(v => /晓晓|Xiaoxiao|慧慧|Huihui/i.test(v.name)) ||
-                 zh.find(v => v.lang === 'zh-CN') ||
-                 zh[0];
+    const zhCN = this._allVoices.filter(v => v.lang === 'zh-CN');
+    const zhTW = this._allVoices.filter(v => v.lang === 'zh-TW');
+    const zhAll = [...zhCN, ...zhTW, ...this._allVoices.filter(v => v.lang.startsWith('zh') && v.lang !== 'zh-CN' && v.lang !== 'zh-TW')];
+    const pref = zhAll.find(v => /晓晓|Xiaoxiao|慧慧|Huihui|Ting[- ]?Ting|Tingting|婷婷/i.test(v.name)) ||
+                 zhAll[0];
     return pref || this._allVoices[0] || null;
   },
 };
