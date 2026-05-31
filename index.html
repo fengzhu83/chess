@@ -443,26 +443,21 @@
     }
     .main-col { gap: 6px; width: 100%; max-width: 500px; }
 
-    /* Board: perfectly square cells */
+    /* Board: W==H for square cells; clamped to avoid overflow */
     .board-outer {
-      --board-size: min(calc(100vw - 12px), calc(100vh - 260px), 500px);
-      width: var(--board-size);
-      height: var(--board-size);
-      max-width: 500px;
-      max-height: 500px;
-      grid-template-columns: 18px repeat(8, 1fr);
-      grid-template-rows: repeat(8, 1fr) 18px;
+      width: calc(min(100vw - 12px, 100vh - 200px, 500px));
+      height: calc(min(100vw - 12px, 100vh - 200px, 500px));
+      grid-template-columns: 22px repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr) 22px;
     }
     .board { grid-column: 2 / 10; grid-row: 1 / 9; }
-    .board-label { font-size: 9px; }
+    .board-label { font-size: 10px; }
     .move-arrow {
-      left: 18px;
-      width: calc(100% - 18px);
-      height: calc(100% - 18px);
+      left: 22px;
+      width: calc(100% - 22px);
+      height: calc(100% - 22px);
     }
-    .square {
-      font-size: min(11.5vw, 62px);
-    }
+    .square { font-size: min(11vw, 57px); }
     .square:hover { filter: none; }
 
     /* Side panel: compact horizontal strip */
@@ -492,7 +487,7 @@
     .score-item .score-val { font-size: 15px; }
     .side-panel button { font-size: 11px; padding: 6px 0; }
 
-    /* Controls: compact */
+    /* Controls */
     .controls { gap: 6px; }
     .controls button { padding: 8px 12px; font-size: 12px; border-radius: 6px; }
     .narration { font-size: 11px; max-width: 100%; min-height: 16px; }
@@ -511,15 +506,14 @@
   /* ── Small Phone ────────────────────────────────────────── */
   @media (max-width: 380px) {
     .board-outer {
-      --board-size: min(calc(100vw - 8px), calc(100vh - 230px));
-      width: var(--board-size);
-      height: var(--board-size);
+      width: calc(100vw - 8px);
+      height: calc(100vw - 8px);
       grid-template-columns: 14px repeat(8, 1fr);
       grid-template-rows: repeat(8, 1fr) 14px;
     }
     .board-label { font-size: 8px; }
     .move-arrow { left: 14px; width: calc(100% - 14px); height: calc(100% - 14px); }
-    .square { font-size: 12vw; }
+    .square { font-size: calc((100vw - 28px) / 8); }
 
     .side-panel {
       width: calc(100vw - 8px);
