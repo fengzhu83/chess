@@ -71,6 +71,7 @@
   }
 
   .board-outer {
+    position: relative;
     display: grid;
     grid-template-columns: 22px repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr) 24px;
@@ -101,13 +102,14 @@
   }
 
   .board {
+    position: absolute;
+    top: 0;
+    left: 22px;
+    right: 0;
+    bottom: 24px;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
-    grid-column: 2 / 10;
-    grid-row: 1 / 9;
-    min-height: 0;
-    min-width: 0;
   }
 
   .square {
@@ -430,7 +432,11 @@
     .board-outer {
       width: calc(min(70vw, 75vh, 500px) + 18px);
       height: calc(min(70vw, 75vh, 500px) + 20px);
+      grid-template-columns: 18px repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr) 20px;
     }
+    .board { left: 18px; bottom: 20px; }
+    .move-arrow { left: 18px; width: calc(100% - 18px); height: calc(100% - 20px); }
     .square { font-size: min(8.5vw, 9vh, 56px); }
     .board-label { font-size: 10px; }
     .captured { font-size: 17px; }
@@ -456,7 +462,7 @@
       grid-template-columns: 22px repeat(8, 1fr);
       grid-template-rows: repeat(8, 1fr) 22px;
     }
-    .board { grid-column: 2 / 10; grid-row: 1 / 9; }
+    .board { left: 22px; bottom: 22px; }
     .board-label { font-size: 10px; }
     .move-arrow {
       left: 22px;
@@ -518,6 +524,7 @@
       grid-template-rows: repeat(8, 1fr) 14px;
     }
     .board-label { font-size: 8px; }
+    .board { left: 14px; bottom: 14px; }
     .move-arrow { left: 14px; width: calc(100% - 14px); height: calc(100% - 14px); }
     .square { font-size: calc((100vw - 28px) / 8); }
 
@@ -949,11 +956,15 @@ const VoiceCaster = {
     const zhOther = zh.filter(v => v.lang !== 'zh-CN');
 
     // Detect gender from voice name (SpeechSynthesisVoice lacks a standard gender field)
+    // Windows: 康/云希/志威(male), 慧/瑶/晓/涵/雅婷(female)
+    // iOS/macOS: Ting-Ting/Mei-Jia/Sin-Ji(female), Tian-Tian(male)
     const isMaleName = (name) =>
       /康|云希|志威|Danny|Kaifu/i.test(name) ||
-      /Yunxi|Zhiwei/i.test(name);
+      /Yunxi|Zhiwei/i.test(name) ||
+      /Tian[- ]?Tian/i.test(name);
     const isFemaleName = (name) =>
-      /慧|瑶|晓|涵|雅婷|Tracy|Huihui|Yaoyao|Xiaoxiao|Hanhan|Yating/i.test(name);
+      /慧|瑶|晓|涵|雅婷|Tracy|Huihui|Yaoyao|Xiaoxiao|Hanhan|Yating/i.test(name) ||
+      /Ting[- ]?Ting|Mei[- ]?Jia|Sin[- ]?Ji|Yu[- ]?Shu/i.test(name);
 
     const males = zh.filter(v => isMaleName(v.name));
     const females = zh.filter(v => isFemaleName(v.name));
