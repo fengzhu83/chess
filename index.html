@@ -443,12 +443,13 @@
     }
     .main-col { gap: 6px; width: 100%; max-width: 500px; }
 
-    /* Board: no overflow, square grid */
+    /* Board: perfectly square cells */
     .board-outer {
-      width: calc(100vw - 12px);
+      --board-size: min(calc(100vw - 12px), calc(100vh - 260px), 500px);
+      width: var(--board-size);
+      height: var(--board-size);
       max-width: 500px;
-      height: auto;
-      aspect-ratio: 1 / 1;
+      max-height: 500px;
       grid-template-columns: 18px repeat(8, 1fr);
       grid-template-rows: repeat(8, 1fr) 18px;
     }
@@ -510,7 +511,9 @@
   /* ── Small Phone ────────────────────────────────────────── */
   @media (max-width: 380px) {
     .board-outer {
-      width: calc(100vw - 8px);
+      --board-size: min(calc(100vw - 8px), calc(100vh - 230px));
+      width: var(--board-size);
+      height: var(--board-size);
       grid-template-columns: 14px repeat(8, 1fr);
       grid-template-rows: repeat(8, 1fr) 14px;
     }
