@@ -106,6 +106,8 @@
     grid-template-rows: repeat(8, 1fr);
     grid-column: 2 / 10;
     grid-row: 1 / 9;
+    min-height: 0;
+    min-width: 0;
   }
 
   .square {
@@ -117,7 +119,9 @@
     font-size: min(7vw, 7vh, 52px);
     transition: background-color 0.1s;
     min-height: 0;
+    min-width: 0;
     overflow: hidden;
+    line-height: 1;
   }
   .square.light { background: var(--light); }
   .square.dark  { background: var(--dark); }
